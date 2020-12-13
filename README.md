@@ -1,10 +1,24 @@
-# 删除处理
+# Delete processing
 
-删除处理的逻辑：
+The logic of delete processing :
 
-* 构建删除视图，记录涉及删除的文件和对应上次提交的文件
-* 根据涉及的删除文件构建rdd，只需要记录key就可以了
-* 处理rdd，操作为加载数据的key，然后利用parquet的reader读取，如果读取的数据不在set里面则作为删除数据。
-  注：如果之前已经做过删除查询操作，则可直接读取历史文件，并省略下一步的保存操作。
-* 保存删除数据
-* 查询删除数据为spark视图
+* Build a delete view java object to record the deleted files and the corresponding last submitted files. (COW is supported now)
+
+* The RDD is constructed according to the deleted files involved, and only the keys needs to be recorded.
+
+* To process RDD, the operation is to load the keys of the data, and then use the reader of parquet to read it. If the read data is not in the set, it will be marked as the deleted data.
+
+    Note: if you have done the delete query operation before, you can read the history file directly and omit the next save operation.
+
+* Save delete data (if it's the first time to query)
+
+* Query delete data as a spark view. The specific query methods are as follows:
+
+```java
+String hudiPath = "/hive/warehouse/test.db/test/";
+String timstamp = "202012121212";
+
+DeleteSupport deleteSupport = new DeleteSupport(hudiPath, timstamp);
+Dataset<Row> deleteRows = deleteSupport.getDeleteDataset();
+deleteRows.show();
+```
